@@ -14,7 +14,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* Premium CSS Variables (Mirrors index.html with creator modifications) */
+    /* Premium CSS Variables */
     :root[data-theme="dark"] {
       --bg-color: #08060f;
       --bg-gradient: radial-gradient(circle at 50% 0%, #151124 0%, #08060f 100%);
@@ -731,17 +731,57 @@
           <!-- List items generated dynamically -->
         </div>
 
+        <div class="divider"></div>
+
+        <!-- GitHub Integration Section -->
+        <div class="section-title">
+          <i data-lucide="github"></i>
+          <span>Integración con GitHub</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-owner">Usuario / Propietario</label>
+          <input type="text" id="git-owner" class="form-input" value="jean-deep" placeholder="Ej. jean-deep">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-repo">Repositorio</label>
+          <input type="text" id="git-repo" class="form-input" value="deep-url" placeholder="Ej. deep-url">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-token">Personal Access Token (PAT) *</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" id="git-token" class="form-input" placeholder="ghp_..." style="flex: 1;">
+            <button type="button" class="btn btn-secondary" id="btn-toggle-token" style="padding: 0; flex: 0 0 40px; height: 40px; margin: 0; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+            Guardado localmente en tu navegador. Requiere permisos <code>repo</code> para subir.
+          </span>
+        </div>
+
+        <div class="btn-row" style="margin-top: 1rem; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btn-git-load" style="font-size: 0.8rem; padding: 0.5rem;">
+            <i data-lucide="git-pull-request" style="width:14px; height:14px;"></i> Cargar de GitHub
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-git-push" style="font-size: 0.8rem; padding: 0.5rem;">
+            <i data-lucide="git-commit" style="width:14px; height:14px;"></i> Guardar en GitHub
+          </button>
+        </div>
+
       </div>
 
       <!-- Import / Export Actions -->
       <div class="editor-footer">
         <button class="btn btn-secondary" id="btn-import-trigger">
           <i data-lucide="upload-cloud"></i>
-          Importar JSON Existente
+          Importar JSON Local
         </button>
         <button class="btn btn-primary" id="btn-export">
           <i data-lucide="download"></i>
-          Exportar urls.json
+          Exportar urls.json Local
         </button>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
       </div>
@@ -755,7 +795,6 @@
       </div>
       
       <div class="preview-scrollable">
-        <!-- Inside here, we rebuild a miniature of index.html -->
         <div class="sim-header">
           <div class="sim-logo">WebHub</div>
           <div class="sim-search-wrapper">
@@ -765,7 +804,6 @@
         </div>
 
         <div class="sim-categories" id="sim-categories-container">
-          <!-- Dynamic category pills -->
           <button class="sim-pill active">All</button>
         </div>
 
@@ -845,6 +883,26 @@
       btnCloseImport: document.getElementById('btn-close-import')
     };
 
+    // UTF-8 Safe Base64 Helpers
+    function encodeBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function decodeBase64(str) {
+      const binary = atob(str);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
     // Load initial state from LocalStorage or use default
     function initData() {
       const stored = localStorage.getItem('creator_draft');
@@ -880,6 +938,7 @@
       }
       
       renderAccents();
+      loadGitHubSettings();
       updateUI();
     }
 
@@ -1176,15 +1235,174 @@
         }
       };
       reader.readAsText(file);
-      
-      // Reset input value to allow uploading same file
       elements.fileInput.value = '';
     });
+
+    // GitHub Integration Logic
+    function saveGitHubSettings() {
+      localStorage.setItem('git_owner', document.getElementById('git-owner').value.trim());
+      localStorage.setItem('git_repo', document.getElementById('git-repo').value.trim());
+      localStorage.setItem('git_token', document.getElementById('git-token').value.trim());
+    }
+
+    function loadGitHubSettings() {
+      const owner = localStorage.getItem('git_owner');
+      const repo = localStorage.getItem('git_repo');
+      const token = localStorage.getItem('git_token');
+
+      if (owner) document.getElementById('git-owner').value = owner;
+      if (repo) document.getElementById('git-repo').value = repo;
+      if (token) document.getElementById('git-token').value = token;
+    }
+
+    async function loadFromGitHub() {
+      const owner = document.getElementById('git-owner').value.trim();
+      const repo = document.getElementById('git-repo').value.trim();
+      const token = document.getElementById('git-token').value.trim();
+      
+      if (!owner || !repo) {
+        alert('Introduce el usuario y repositorio de GitHub.');
+        return;
+      }
+
+      const loadBtn = document.getElementById('btn-git-load');
+      const originalText = loadBtn.innerHTML;
+      loadBtn.disabled = true;
+      loadBtn.innerHTML = '<i data-lucide="loader"></i> Cargando...';
+      lucide.createIcons();
+
+      let data;
+      try {
+        if (token) {
+          // Fetch via API with Token to support private repos or bypass raw cache
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3.raw'
+            }
+          });
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error(`Código de estado API: ${res.status}`);
+          }
+        } else {
+          // Fetch from public raw URL
+          const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/urls.json?t=` + Date.now());
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error(`No se pudo acceder a la URL pública. Intenta con un Token.`);
+          }
+        }
+
+        if (Array.isArray(data)) {
+          state.items = data;
+          updateUI();
+          alert(`¡Cargados con éxito ${data.length} enlaces desde GitHub!`);
+        } else {
+          alert('El archivo urls.json no tiene un formato válido (debe ser un arreglo).');
+        }
+      } catch (err) {
+        alert('Error al importar de GitHub: ' + err.message + '\nVerifica los datos e inténtalo de nuevo.');
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    async function pushToGitHub() {
+      const owner = document.getElementById('git-owner').value.trim();
+      const repo = document.getElementById('git-repo').value.trim();
+      const token = document.getElementById('git-token').value.trim();
+      
+      if (!owner || !repo || !token) {
+        alert('Para subir cambios a GitHub necesitas especificar el Usuario, el Repositorio y un Personal Access Token (PAT) con permisos de escritura (repo).');
+        return;
+      }
+
+      const pushBtn = document.getElementById('btn-git-push');
+      const originalText = pushBtn.innerHTML;
+      pushBtn.disabled = true;
+      pushBtn.innerHTML = '<i data-lucide="loader"></i> Guardando...';
+      lucide.createIcons();
+
+      try {
+        // 1. Fetch current file SHA
+        const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+          headers: {
+            'Authorization': `token ${token}`
+          }
+        });
+        
+        let sha = '';
+        if (getRes.status === 200) {
+          const fileInfo = await getRes.json();
+          sha = fileInfo.sha;
+        } else if (getRes.status !== 404) {
+          throw new Error(`Error de comunicación con GitHub (Status: ${getRes.status})`);
+        }
+
+        // 2. Commit update
+        const contentStr = JSON.stringify(state.items, null, 2);
+        const base64Content = encodeBase64(contentStr);
+
+        const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: "Update urls.json via WebHub Creator",
+            content: base64Content,
+            sha: sha || undefined,
+            branch: "main"
+          })
+        });
+
+        if (putRes.ok) {
+          alert('¡Guardado en GitHub con éxito! Los cambios se verán reflejados en tu hub.');
+        } else {
+          const errData = await putRes.json();
+          throw new Error(errData.message || 'Error desconocido');
+        }
+      } catch (err) {
+        alert('Error al guardar en GitHub: ' + err.message);
+      } finally {
+        pushBtn.disabled = false;
+        pushBtn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
 
     // Initialize Page
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       elements.themeToggle.addEventListener('click', toggleTheme);
+      
+      // Bind GitHub event inputs
+      document.getElementById('git-owner').addEventListener('input', saveGitHubSettings);
+      document.getElementById('git-repo').addEventListener('input', saveGitHubSettings);
+      document.getElementById('git-token').addEventListener('input', saveGitHubSettings);
+      
+      document.getElementById('btn-git-load').addEventListener('click', loadFromGitHub);
+      document.getElementById('btn-git-push').addEventListener('click', pushToGitHub);
+      
+      const btnToggle = document.getElementById('btn-toggle-token');
+      const tokenInput = document.getElementById('git-token');
+      btnToggle.addEventListener('click', () => {
+        if (tokenInput.type === 'password') {
+          tokenInput.type = 'text';
+          btnToggle.innerHTML = '<i data-lucide="eye-off" style="width: 18px; height: 18px;"></i>';
+        } else {
+          tokenInput.type = 'password';
+          btnToggle.innerHTML = '<i data-lucide="eye" style="width: 18px; height: 18px;"></i>';
+        }
+        lucide.createIcons();
+      });
+
       initData();
     });
   </script>
