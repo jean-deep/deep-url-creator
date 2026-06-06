@@ -1271,37 +1271,43 @@
       loadBtn.innerHTML = '<i data-lucide="loader"></i> Cargando...';
       lucide.createIcons();
 
-      let data;
       try {
+        const headers = {};
         if (token) {
-          // Fetch via API with Token to support private repos or bypass raw cache
-          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3.raw'
-            }
-          });
-          if (res.ok) {
-            data = await res.json();
-          } else {
-            throw new Error(`Código de estado API: ${res.status}`);
-          }
-        } else {
-          // Fetch from public raw URL
-          const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/urls.json?t=` + Date.now());
-          if (res.ok) {
-            data = await res.json();
-          } else {
-            throw new Error(`No se pudo acceder a la URL pública. Intenta con un Token.`);
-          }
+          headers['Authorization'] = `token ${token}`;
         }
+        
+        // We always query the GitHub API to get the real-time instant git data!
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json?t=` + Date.now(), {
+          headers: headers
+        });
 
-        if (Array.isArray(data)) {
-          state.items = data;
-          updateUI();
-          alert(`¡Cargados con éxito ${data.length} enlaces desde GitHub!`);
+        if (res.ok) {
+          const fileInfo = await res.json();
+          if (fileInfo && fileInfo.content) {
+            // Remove any whitespace/newlines from base64 content
+            const base64Content = fileInfo.content.replace(/\s/g, '');
+            const decodedStr = decodeBase64(base64Content);
+            const data = JSON.parse(decodedStr);
+            
+            if (Array.isArray(data)) {
+              state.items = data;
+              updateUI();
+              alert(`¡Cargados con éxito ${data.length} enlaces desde el repositorio GitHub!`);
+            } else {
+              alert('El archivo urls.json en GitHub no tiene un formato válido (debe ser un arreglo).');
+            }
+          } else {
+            throw new Error('No se encontró el contenido del archivo en la respuesta de la API.');
+          }
         } else {
-          alert('El archivo urls.json no tiene un formato válido (debe ser un arreglo).');
+          if (res.status === 404) {
+            throw new Error('El archivo urls.json no existe en el repositorio.');
+          } else if (res.status === 403 && !token) {
+            throw new Error('Límite de peticiones de GitHub alcanzado para tu IP. Por favor, introduce un Personal Access Token (PAT).');
+          } else {
+            throw new Error(`Error de API de GitHub (Status: ${res.status})`);
+          }
         }
       } catch (err) {
         alert('Error al importar de GitHub: ' + err.message + '\nVerifica los datos e inténtalo de nuevo.');
