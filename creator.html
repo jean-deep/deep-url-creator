@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Creator & Previewer - WebHub</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Premium CSS Variables */
+    :root[data-theme="dark"] {
+      --bg-color: #08060f;
+      --bg-gradient: radial-gradient(circle at 50% 0%, #151124 0%, #08060f 100%);
+      --sidebar-bg: rgba(18, 14, 30, 0.85);
+      --card-bg: rgba(25, 20, 40, 0.5);
+      --card-border: rgba(255, 255, 255, 0.06);
+      --card-border-hover: rgba(255, 255, 255, 0.15);
+      --text-main: #f3f1f6;
+      --text-muted: #9c97aa;
+      --accent-primary: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.15);
+      --input-bg: rgba(255, 255, 255, 0.03);
+      --input-border: rgba(255, 255, 255, 0.08);
+      --input-focus: rgba(139, 92, 246, 0.3);
+      --shadow-color: rgba(0, 0, 0, 0.5);
+      --badge-bg: rgba(139, 92, 246, 0.12);
+      --pill-active-bg: #8b5cf6;
+      --pill-active-text: #ffffff;
+      --pill-inactive-bg: rgba(255, 255, 255, 0.04);
+      --pill-inactive-text: #9c97aa;
+      --glass-blur: blur(16px);
+      --divider-color: rgba(255, 255, 255, 0.06);
+    }
+
+    :root[data-theme="light"] {
+      --bg-color: #e9ecf5;
+      --bg-gradient: radial-gradient(circle at 50% 0%, #f4f5fa 0%, #e9ecf5 100%);
+      --sidebar-bg: rgba(255, 255, 255, 0.85);
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --card-border: rgba(0, 0, 0, 0.06);
+      --card-border-hover: rgba(0, 0, 0, 0.15);
+      --text-main: #1e1b29;
+      --text-muted: #6e6b7b;
+      --accent-primary: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.1);
+      --input-bg: rgba(0, 0, 0, 0.02);
+      --input-border: rgba(0, 0, 0, 0.08);
+      --input-focus: rgba(99, 102, 241, 0.3);
+      --shadow-color: rgba(0, 0, 0, 0.05);
+      --badge-bg: rgba(99, 102, 241, 0.08);
+      --pill-active-bg: #6366f1;
+      --pill-active-text: #ffffff;
+      --pill-inactive-bg: rgba(0, 0, 0, 0.04);
+      --pill-inactive-text: #6e6b7b;
+      --glass-blur: blur(16px);
+      --divider-color: rgba(0, 0, 0, 0.06);
+    }
+
+    /* Core Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.4);
+    }
+
+    /* App Split Layout */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    /* Creator Sidebar */
+    .editor-pane {
+      width: 480px;
+      min-width: 400px;
+      background: var(--sidebar-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .editor-scrollable {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    /* Section Headings */
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title i {
+      width: 16px;
+      height: 16px;
+      color: var(--accent-primary);
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--input-focus);
+    }
+
+    .form-textarea {
+      height: 70px;
+      resize: vertical;
+    }
+
+    /* Accent Picker & Emoji Row */
+    .preset-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .color-chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .color-chip:hover {
+      transform: scale(1.1);
+    }
+
+    .color-chip.active {
+      border-color: var(--text-main);
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    .emoji-chip {
+      background: var(--pill-inactive-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .emoji-chip:hover {
+      background: var(--card-border-hover);
+    }
+
+    /* Form Buttons */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: var(--pill-inactive-bg);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: var(--card-border-hover);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--divider-color);
+      margin: 1.5rem 0;
+    }
+
+    /* Link List */
+    .link-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .link-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .link-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .link-item-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .link-item-url {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .link-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .btn-item {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-item:hover {
+      background: var(--pill-inactive-bg);
+      color: var(--text-main);
+    }
+
+    .btn-item.delete:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    /* Footer Buttons (Import / Export) */
+    .editor-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--divider-color);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: rgba(10, 8, 18, 0.3);
+    }
+
+    /* Preview Container */
+    .preview-pane {
+      flex: 1;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Navigation header (Creator Page) */
+    .creator-nav {
+      height: 65px;
+      border-bottom: 1px solid var(--card-border);
+      background: var(--sidebar-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      padding: 0 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .creator-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .creator-logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    /* Live Preview Section Header */
+    .preview-banner {
+      background: rgba(139, 92, 246, 0.08);
+      border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .preview-badge {
+      background: #10b981;
+      color: white;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Sandboxed Preview Area */
+    .preview-scrollable {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      background: var(--bg-gradient);
+    }
+
+    /* Embed styles of index.html directly into preview container for live simulation */
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .sim-logo {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sim-search {
+      flex: 1;
+      max-width: 300px;
+      padding: 0.5rem 0.75rem 0.5rem 2rem;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      position: relative;
+    }
+
+    .sim-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .sim-search-icon {
+      position: absolute;
+      left: 10px;
+      color: var(--text-muted);
+      width: 14px;
+      height: 14px;
+    }
+
+    .sim-categories {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+
+    .sim-pill {
+      padding: 0.35rem 0.9rem;
+      border-radius: 100px;
+      background: var(--pill-inactive-bg);
+      border: 1px solid var(--card-border);
+      color: var(--pill-inactive-text);
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .sim-pill.active {
+      background: var(--pill-active-bg);
+      color: var(--pill-active-text);
+      border-color: var(--pill-active-bg);
+    }
+
+    .sim-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Embedded card simulation */
+    .sim-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      height: 150px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    .sim-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--card-accent, var(--accent-primary));
+    }
+
+    .sim-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .sim-card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--badge-bg);
+      color: var(--card-accent, var(--accent-primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .sim-card-cat {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      background: var(--badge-bg);
+      color: var(--card-accent, var(--accent-primary));
+    }
+
+    .sim-card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sim-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex-grow: 1;
+    }
+
+    .sim-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Modal for import */
+    .import-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 6, 15, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .import-modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .import-container {
+      background: var(--sidebar-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation header -->
+  <div class="creator-nav">
+    <div class="creator-logo">
+      <div style="background: linear-gradient(135deg, #a78bfa 0%, #6366f1 100%); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+        <i data-lucide="compass" style="width: 18px; height: 18px;"></i>
+      </div>
+      <span class="creator-logo-text">WebHub Creator</span>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="btn-icon" id="theme-toggle" style="background: var(--pill-inactive-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex;" aria-label="Cambiar tema">
+        <i data-lucide="sun" id="theme-icon-light" style="display: none; width: 18px; height: 18px;"></i>
+        <i data-lucide="moon" id="theme-icon-dark" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Split Layout -->
+  <div class="app-layout">
+    
+    <!-- Left Editor Pane -->
+    <div class="editor-pane">
+      
+      <!-- Scrollable Form and List -->
+      <div class="editor-scrollable">
+        
+        <!-- Form Section -->
+        <div class="section-title">
+          <i data-lucide="edit-3"></i>
+          <span id="form-heading-text">Añadir Nuevo Enlace</span>
+        </div>
+        
+        <form id="url-form" onsubmit="event.preventDefault();">
+          <input type="hidden" id="edit-index" value="-1">
+          
+          <div class="form-group">
+            <label class="form-label" for="field-title">Título del Sitio *</label>
+            <input type="text" id="field-title" class="form-input" placeholder="Ej. GitHub Pages" required autocomplete="off">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="field-url">Enlace (URL) *</label>
+            <input type="url" id="field-url" class="form-input" placeholder="Ej. https://pages.github.com" required autocomplete="off">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="field-desc">Descripción Corta</label>
+            <textarea id="field-desc" class="form-textarea" placeholder="Escribe un breve resumen de lo que ofrece este sitio..."></textarea>
+          </div>
+
+          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label class="form-label" for="field-cat">Categoría</label>
+              <input type="text" id="field-cat" class="form-input" placeholder="Ej. Desarrollo" list="categories-list" autocomplete="off">
+              <datalist id="categories-list">
+                <option value="Desarrollo">
+                <option value="Diseño">
+                <option value="Buscadores">
+                <option value="Entretenimiento">
+              </datalist>
+            </div>
+            <div>
+              <label class="form-label" for="field-icon">Emoji / Icono</label>
+              <input type="text" id="field-icon" class="form-input" placeholder="Ej. 💻" style="font-size: 1.1rem; text-align: center;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Paleta de Emojis Rápidos</label>
+            <div class="preset-row">
+              <span class="emoji-chip" onclick="selectQuickEmoji('🔍')">🔍</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('💻')">💻</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('🎨')">🎨</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('📺')">📺</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('🛠️')">🛠️</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('📚')">📚</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('🚀')">🚀</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('🌐')">🌐</span>
+              <span class="emoji-chip" onclick="selectQuickEmoji('💬')">💬</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Color de Acento en Card</label>
+            <div class="preset-row" id="accent-colors-container">
+              <!-- Color chips generated dynamically -->
+            </div>
+            <input type="hidden" id="field-accent" value="#6366f1">
+          </div>
+          
+          <div class="btn-row">
+            <button type="button" class="btn btn-secondary" id="btn-reset" style="display:none;">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-save">
+              <i data-lucide="plus"></i>
+              <span id="btn-save-text">Añadir Enlace</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="divider"></div>
+
+        <!-- Manager Section -->
+        <div class="section-title">
+          <i data-lucide="list"></i>
+          <span>Administrar Enlaces</span>
+        </div>
+
+        <div class="link-list" id="link-list-container">
+          <!-- List items generated dynamically -->
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- GitHub Integration Section -->
+        <div class="section-title">
+          <i data-lucide="github"></i>
+          <span>Integración con GitHub</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-owner">Usuario / Propietario</label>
+          <input type="text" id="git-owner" class="form-input" value="jean-deep" placeholder="Ej. jean-deep">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-repo">Repositorio</label>
+          <input type="text" id="git-repo" class="form-input" value="deep-url" placeholder="Ej. deep-url">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="git-token">Personal Access Token (PAT) *</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" id="git-token" class="form-input" placeholder="ghp_..." style="flex: 1;">
+            <button type="button" class="btn btn-secondary" id="btn-toggle-token" style="padding: 0; flex: 0 0 40px; height: 40px; margin: 0; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+            Guardado localmente en tu navegador. Requiere permisos <code>repo</code> para subir.
+          </span>
+        </div>
+
+        <div class="btn-row" style="margin-top: 1rem; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btn-git-load" style="font-size: 0.8rem; padding: 0.5rem;">
+            <i data-lucide="git-pull-request" style="width:14px; height:14px;"></i> Cargar de GitHub
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-git-push" style="font-size: 0.8rem; padding: 0.5rem;">
+            <i data-lucide="git-commit" style="width:14px; height:14px;"></i> Guardar en GitHub
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Import / Export Actions -->
+      <div class="editor-footer">
+        <button class="btn btn-secondary" id="btn-import-trigger">
+          <i data-lucide="upload-cloud"></i>
+          Importar JSON Local
+        </button>
+        <button class="btn btn-primary" id="btn-export">
+          <i data-lucide="download"></i>
+          Exportar urls.json Local
+        </button>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+      </div>
+    </div>
+
+    <!-- Right Live Preview Pane -->
+    <div class="preview-pane">
+      <div class="preview-banner">
+        <span>VISTA PREVIA EN TIEMPO REAL (SIMULADOR DE HUB)</span>
+        <span class="preview-badge">Reactivo</span>
+      </div>
+      
+      <div class="preview-scrollable">
+        <div class="sim-header">
+          <div class="sim-logo">WebHub</div>
+          <div class="sim-search-wrapper">
+            <i data-lucide="search" class="sim-search-icon"></i>
+            <input type="text" class="sim-search" placeholder="Simular búsqueda..." disabled>
+          </div>
+        </div>
+
+        <div class="sim-categories" id="sim-categories-container">
+          <button class="sim-pill active">All</button>
+        </div>
+
+        <div class="sim-grid" id="sim-grid-container">
+          <!-- Dynamic cards preview -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Import Modal UI -->
+  <div class="import-modal" id="import-modal">
+    <div class="import-container">
+      <h3 style="margin-bottom: 1rem; font-family: 'Outfit';">Cargar JSON</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Selecciona un archivo JSON estructurado de tu sistema para cargarlo y editarlo.</p>
+      
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <button class="btn btn-primary" onclick="document.getElementById('import-file-input').click()">
+          <i data-lucide="file"></i> Buscar Archivo
+        </button>
+        <button class="btn btn-secondary" id="btn-close-import">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let state = {
+      items: [],
+      selectedAccent: '#6366f1',
+      theme: 'dark'
+    };
+
+    const accents = [
+      { name: 'Indigo', value: '#6366f1' },
+      { name: 'Magenta', value: '#d946ef' },
+      { name: 'Emerald', value: '#10b981' },
+      { name: 'Cyan', value: '#06b6d4' },
+      { name: 'Violet', value: '#8b5cf6' },
+      { name: 'Orange', value: '#f97316' },
+      { name: 'Crimson', value: '#ef4444' }
+    ];
+
+    // DOM Elements
+    const elements = {
+      themeToggle: document.getElementById('theme-toggle'),
+      themeIconLight: document.getElementById('theme-icon-light'),
+      themeIconDark: document.getElementById('theme-icon-dark'),
+      
+      // Form fields
+      form: document.getElementById('url-form'),
+      fieldEditIndex: document.getElementById('edit-index'),
+      fieldTitle: document.getElementById('field-title'),
+      fieldUrl: document.getElementById('field-url'),
+      fieldDesc: document.getElementById('field-desc'),
+      fieldCat: document.getElementById('field-cat'),
+      fieldIcon: document.getElementById('field-icon'),
+      fieldAccent: document.getElementById('field-accent'),
+      
+      btnSave: document.getElementById('btn-save'),
+      btnSaveText: document.getElementById('btn-save-text'),
+      btnReset: document.getElementById('btn-reset'),
+      formHeadingText: document.getElementById('form-heading-text'),
+      
+      // Containers
+      accentsContainer: document.getElementById('accent-colors-container'),
+      linkListContainer: document.getElementById('link-list-container'),
+      simCategoriesContainer: document.getElementById('sim-categories-container'),
+      simGridContainer: document.getElementById('sim-grid-container'),
+      
+      // Import/Export
+      btnImportTrigger: document.getElementById('btn-import-trigger'),
+      btnExport: document.getElementById('btn-export'),
+      fileInput: document.getElementById('import-file-input'),
+      importModal: document.getElementById('import-modal'),
+      btnCloseImport: document.getElementById('btn-close-import')
+    };
+
+    // UTF-8 Safe Base64 Helpers
+    function encodeBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function decodeBase64(str) {
+      const binary = atob(str);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    // Load initial state from LocalStorage or use default
+    function initData() {
+      const stored = localStorage.getItem('creator_draft');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            state.items = parsed;
+          }
+        } catch(e) {}
+      }
+
+      if (state.items.length === 0) {
+        // Fallback mock list to start with
+        state.items = [
+          {
+            title: "Desarrollo con GitHub",
+            url: "https://github.com",
+            description: "Alojamiento de código fuente y control de versiones basado en Git.",
+            category: "Desarrollo",
+            accent: "#10b981",
+            icon: "💻"
+          },
+          {
+            title: "Herramientas de Figma",
+            url: "https://figma.com",
+            description: "Plataforma web de diseño colaborativo e interfaces vectoriales.",
+            category: "Diseño",
+            accent: "#d946ef",
+            icon: "🎨"
+          }
+        ];
+      }
+      
+      renderAccents();
+      loadGitHubSettings();
+      updateUI();
+    }
+
+    // Theme Management
+    function initTheme() {
+      const storedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      state.theme = storedTheme || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', state.theme);
+      updateThemeIcons();
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', state.theme);
+      localStorage.setItem('theme', state.theme);
+      updateThemeIcons();
+    }
+
+    function updateThemeIcons() {
+      if (state.theme === 'dark') {
+        elements.themeIconLight.style.display = 'none';
+        elements.themeIconDark.style.display = 'block';
+      } else {
+        elements.themeIconLight.style.display = 'block';
+        elements.themeIconDark.style.display = 'none';
+      }
+    }
+
+    // Accent Chips rendering
+    function renderAccents() {
+      elements.accentsContainer.innerHTML = '';
+      accents.forEach(acc => {
+        const chip = document.createElement('div');
+        chip.className = `color-chip ${state.selectedAccent === acc.value ? 'active' : ''}`;
+        chip.style.backgroundColor = acc.value;
+        chip.title = acc.name;
+        chip.addEventListener('click', () => {
+          state.selectedAccent = acc.value;
+          elements.fieldAccent.value = acc.value;
+          renderAccents();
+        });
+        elements.accentsContainer.appendChild(chip);
+      });
+    }
+
+    // Emoji Helper Action
+    window.selectQuickEmoji = function(emoji) {
+      elements.fieldIcon.value = emoji;
+    }
+
+    // Update UI elements from state
+    function updateUI() {
+      // Save backup
+      localStorage.setItem('creator_draft', JSON.stringify(state.items));
+      // Save session storage for sharing with index.html on click-back
+      sessionStorage.setItem('urls_data', JSON.stringify(state.items));
+
+      renderSidebarList();
+      renderPreview();
+      lucide.createIcons();
+    }
+
+    // Render left panel list of links
+    function renderSidebarList() {
+      elements.linkListContainer.innerHTML = '';
+      
+      if (state.items.length === 0) {
+        elements.linkListContainer.innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+            No hay enlaces en la lista. Añade uno arriba.
+          </div>
+        `;
+        return;
+      }
+
+      state.items.forEach((item, index) => {
+        const container = document.createElement('div');
+        container.className = 'link-item';
+        
+        container.innerHTML = `
+          <div class="link-item-info">
+            <div class="link-item-title">${item.icon || '🔗'} ${item.title || 'Sin Título'}</div>
+            <div class="link-item-url">${item.url}</div>
+          </div>
+          <div class="link-item-actions">
+            <button type="button" class="btn-item" onclick="moveItem(${index}, -1)" title="Subir" ${index === 0 ? 'disabled' : ''}>
+              <i data-lucide="chevron-up" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button type="button" class="btn-item" onclick="moveItem(${index}, 1)" title="Bajar" ${index === state.items.length - 1 ? 'disabled' : ''}>
+              <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button type="button" class="btn-item" onclick="editItem(${index})" title="Editar">
+              <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button type="button" class="btn-item delete" onclick="deleteItem(${index})" title="Eliminar">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        `;
+        
+        elements.linkListContainer.appendChild(container);
+      });
+    }
+
+    // Render right panel preview
+    function renderPreview() {
+      // 1. Categories
+      elements.simCategoriesContainer.innerHTML = '';
+      
+      const cats = ['All', ...new Set(state.items.map(item => item.category || 'Otros'))];
+      cats.forEach(cat => {
+        const pill = document.createElement('button');
+        pill.className = `sim-pill ${cat === 'All' ? 'active' : ''}`;
+        pill.innerText = cat;
+        elements.simCategoriesContainer.appendChild(pill);
+      });
+
+      // 2. Cards Grid
+      elements.simGridContainer.innerHTML = '';
+      
+      if (state.items.length === 0) {
+        elements.simGridContainer.innerHTML = `
+          <div class="sim-empty">
+            Vista previa vacía. Añade elementos para visualizarlos.
+          </div>
+        `;
+        return;
+      }
+
+      state.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'sim-card';
+        card.style.setProperty('--card-accent', item.accent || '#6366f1');
+        
+        card.innerHTML = `
+          <div class="sim-card-header">
+            <div class="sim-card-icon">
+              <span>${item.icon || '🔗'}</span>
+            </div>
+            <span class="sim-card-cat">${item.category || 'Otros'}</span>
+          </div>
+          <div class="sim-card-title">${item.title || 'Sin Título'}</div>
+          <div class="sim-card-desc">${item.description || 'Sin descripción disponible.'}</div>
+        `;
+        
+        elements.simGridContainer.appendChild(card);
+      });
+    }
+
+    // Actions: Edit/Save/Reset Form
+    elements.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const title = elements.fieldTitle.value.trim();
+      const url = elements.fieldUrl.value.trim();
+      const desc = elements.fieldDesc.value.trim();
+      const cat = elements.fieldCat.value.trim() || 'Otros';
+      const icon = elements.fieldIcon.value.trim() || '🔗';
+      const accent = elements.fieldAccent.value;
+      const editIndex = parseInt(elements.fieldEditIndex.value);
+
+      const newItem = { title, url, description: desc, category: cat, icon, accent };
+
+      if (editIndex >= 0) {
+        // Edit existing
+        state.items[editIndex] = newItem;
+      } else {
+        // Add new
+        state.items.push(newItem);
+      }
+
+      resetForm();
+      updateUI();
+    });
+
+    window.editItem = function(index) {
+      const item = state.items[index];
+      
+      elements.fieldEditIndex.value = index;
+      elements.fieldTitle.value = item.title;
+      elements.fieldUrl.value = item.url;
+      elements.fieldDesc.value = item.description || '';
+      elements.fieldCat.value = item.category || 'Otros';
+      elements.fieldIcon.value = item.icon || '🔗';
+      
+      state.selectedAccent = item.accent || '#6366f1';
+      elements.fieldAccent.value = state.selectedAccent;
+      renderAccents();
+
+      elements.formHeadingText.innerText = `Editar Enlace #${index + 1}`;
+      elements.btnSaveText.innerText = "Guardar Cambios";
+      elements.btnReset.style.display = "flex";
+      
+      // Scroll form into view if needed
+      elements.form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.deleteItem = function(index) {
+      if (confirm('¿Estás seguro de que quieres eliminar este enlace?')) {
+        state.items.splice(index, 1);
+        
+        // If we are currently editing the deleted index, reset the form
+        const currentEditIndex = parseInt(elements.fieldEditIndex.value);
+        if (currentEditIndex === index) {
+          resetForm();
+        } else if (currentEditIndex > index) {
+          elements.fieldEditIndex.value = currentEditIndex - 1;
+        }
+        
+        updateUI();
+      }
+    }
+
+    window.moveItem = function(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= state.items.length) return;
+      
+      // Swap elements
+      const temp = state.items[index];
+      state.items[index] = state.items[targetIndex];
+      state.items[targetIndex] = temp;
+      
+      // Update form edit index pointer if it was affected
+      const currentEditIndex = parseInt(elements.fieldEditIndex.value);
+      if (currentEditIndex === index) {
+        elements.fieldEditIndex.value = targetIndex;
+      } else if (currentEditIndex === targetIndex) {
+        elements.fieldEditIndex.value = index;
+      }
+      
+      updateUI();
+    }
+
+    function resetForm() {
+      elements.form.reset();
+      elements.fieldEditIndex.value = "-1";
+      state.selectedAccent = '#6366f1';
+      elements.fieldAccent.value = '#6366f1';
+      renderAccents();
+      
+      elements.formHeadingText.innerText = "Añadir Nuevo Enlace";
+      elements.btnSaveText.innerText = "Añadir Enlace";
+      elements.btnReset.style.display = "none";
+    }
+
+    elements.btnReset.addEventListener('click', resetForm);
+
+    // Export Functionality
+    elements.btnExport.addEventListener('click', () => {
+      if (state.items.length === 0) {
+        alert('Agrega al menos un enlace antes de exportar.');
+        return;
+      }
+
+      const dataStr = JSON.stringify(state.items, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = 'urls.json';
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    });
+
+    // Import Functionality
+    elements.btnImportTrigger.addEventListener('click', () => {
+      elements.importModal.classList.add('active');
+    });
+
+    elements.btnCloseImport.addEventListener('click', () => {
+      elements.importModal.classList.remove('active');
+    });
+
+    elements.fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (Array.isArray(parsed)) {
+            state.items = parsed;
+            elements.importModal.classList.remove('active');
+            updateUI();
+            alert('¡JSON Importado con éxito! Se cargaron ' + parsed.length + ' enlaces.');
+          } else {
+            alert('Formato de archivo inválido. Debe ser un arreglo de enlaces.');
+          }
+        } catch(err) {
+          alert('Error al leer el archivo JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      elements.fileInput.value = '';
+    });
+
+    // GitHub Integration Logic
+    function saveGitHubSettings() {
+      localStorage.setItem('git_owner', document.getElementById('git-owner').value.trim());
+      localStorage.setItem('git_repo', document.getElementById('git-repo').value.trim());
+      localStorage.setItem('git_token', document.getElementById('git-token').value.trim());
+    }
+
+    function loadGitHubSettings() {
+      const owner = localStorage.getItem('git_owner');
+      const repo = localStorage.getItem('git_repo');
+      const token = localStorage.getItem('git_token');
+
+      if (owner) document.getElementById('git-owner').value = owner;
+      if (repo) document.getElementById('git-repo').value = repo;
+      if (token) document.getElementById('git-token').value = token;
+    }
+
+    async function loadFromGitHub() {
+      const owner = document.getElementById('git-owner').value.trim();
+      const repo = document.getElementById('git-repo').value.trim();
+      const token = document.getElementById('git-token').value.trim();
+      
+      if (!owner || !repo) {
+        alert('Introduce el usuario y repositorio de GitHub.');
+        return;
+      }
+
+      const loadBtn = document.getElementById('btn-git-load');
+      const originalText = loadBtn.innerHTML;
+      loadBtn.disabled = true;
+      loadBtn.innerHTML = '<i data-lucide="loader"></i> Cargando...';
+      lucide.createIcons();
+
+      let data;
+      try {
+        if (token) {
+          // Fetch via API with Token to support private repos or bypass raw cache
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3.raw'
+            }
+          });
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error(`Código de estado API: ${res.status}`);
+          }
+        } else {
+          // Fetch from public raw URL
+          const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/urls.json?t=` + Date.now());
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error(`No se pudo acceder a la URL pública. Intenta con un Token.`);
+          }
+        }
+
+        if (Array.isArray(data)) {
+          state.items = data;
+          updateUI();
+          alert(`¡Cargados con éxito ${data.length} enlaces desde GitHub!`);
+        } else {
+          alert('El archivo urls.json no tiene un formato válido (debe ser un arreglo).');
+        }
+      } catch (err) {
+        alert('Error al importar de GitHub: ' + err.message + '\nVerifica los datos e inténtalo de nuevo.');
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    async function pushToGitHub() {
+      const owner = document.getElementById('git-owner').value.trim();
+      const repo = document.getElementById('git-repo').value.trim();
+      const token = document.getElementById('git-token').value.trim();
+      
+      if (!owner || !repo || !token) {
+        alert('Para subir cambios a GitHub necesitas especificar el Usuario, el Repositorio y un Personal Access Token (PAT) con permisos de escritura (repo).');
+        return;
+      }
+
+      const pushBtn = document.getElementById('btn-git-push');
+      const originalText = pushBtn.innerHTML;
+      pushBtn.disabled = true;
+      pushBtn.innerHTML = '<i data-lucide="loader"></i> Guardando...';
+      lucide.createIcons();
+
+      try {
+        // 1. Fetch current file SHA
+        const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+          headers: {
+            'Authorization': `token ${token}`
+          }
+        });
+        
+        let sha = '';
+        if (getRes.status === 200) {
+          const fileInfo = await getRes.json();
+          sha = fileInfo.sha;
+        } else if (getRes.status !== 404) {
+          throw new Error(`Error de comunicación con GitHub (Status: ${getRes.status})`);
+        }
+
+        // 2. Commit update
+        const contentStr = JSON.stringify(state.items, null, 2);
+        const base64Content = encodeBase64(contentStr);
+
+        const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/urls.json`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: "Update urls.json via WebHub Creator",
+            content: base64Content,
+            sha: sha || undefined,
+            branch: "main"
+          })
+        });
+
+        if (putRes.ok) {
+          alert('¡Guardado en GitHub con éxito! Los cambios se verán reflejados en tu hub.');
+        } else {
+          const errData = await putRes.json();
+          throw new Error(errData.message || 'Error desconocido');
+        }
+      } catch (err) {
+        alert('Error al guardar en GitHub: ' + err.message);
+      } finally {
+        pushBtn.disabled = false;
+        pushBtn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      elements.themeToggle.addEventListener('click', toggleTheme);
+      
+      // Bind GitHub event inputs
+      document.getElementById('git-owner').addEventListener('input', saveGitHubSettings);
+      document.getElementById('git-repo').addEventListener('input', saveGitHubSettings);
+      document.getElementById('git-token').addEventListener('input', saveGitHubSettings);
+      
+      document.getElementById('btn-git-load').addEventListener('click', loadFromGitHub);
+      document.getElementById('btn-git-push').addEventListener('click', pushToGitHub);
+      
+      const btnToggle = document.getElementById('btn-toggle-token');
+      const tokenInput = document.getElementById('git-token');
+      btnToggle.addEventListener('click', () => {
+        if (tokenInput.type === 'password') {
+          tokenInput.type = 'text';
+          btnToggle.innerHTML = '<i data-lucide="eye-off" style="width: 18px; height: 18px;"></i>';
+        } else {
+          tokenInput.type = 'password';
+          btnToggle.innerHTML = '<i data-lucide="eye" style="width: 18px; height: 18px;"></i>';
+        }
+        lucide.createIcons();
+      });
+
+      initData();
+    });
+  </script>
+</body>
+</html>
